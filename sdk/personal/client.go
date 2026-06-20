@@ -18,6 +18,7 @@ type Client struct {
 	mu                 sync.Mutex
 	lastStatementCall  time.Time
 	lastClientInfoCall time.Time
+	cachedClientInfo   *UserInfo
 }
 
 // NewClient creates and returns a new Client instance with the given token and options.
@@ -100,18 +101,27 @@ func IsTooManyRequests(err error) bool {
 }
 
 // GetClientInfo returns information about the authorized client and their accounts.
+// The result is cached for 60 seconds.
 func (c *Client) GetClientInfo(ctx context.Context) (*UserInfo, error) {
 	c.mu.Lock()
-	if time.Since(c.lastClientInfoCall) < 60*time.Second {
-		c.mu.Unlock()
-		return nil, fmt.Errorf("too many requests: GetClientInfo can be called once per 60 seconds")
+	if c.cachedClientInfo != nil && time.Since(c.lastClientInfoCall) < 60*time.Second {
+		defer c.mu.Unlock()
+		return c.cachedClientInfo, nil
 	}
-	c.lastClientInfoCall = time.Now()
 	c.mu.Unlock()
 
 	var res UserInfo
 	err := c.base.Do(ctx, http.MethodGet, "/personal/client-info", nil, &res, true)
-	return &res, err
+	if err != nil {
+		return nil, err
+	}
+
+	c.mu.Lock()
+	c.cachedClientInfo = &res
+	c.lastClientInfoCall = time.Now()
+	c.mu.Unlock()
+
+	return &res, nil
 }
 
 // SetWebhook sets the webhook URL for receiving transaction notifications.

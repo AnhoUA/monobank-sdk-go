@@ -24,4 +24,14 @@ func main() {
 			fmt.Printf("Currency A: %d, Sell: %.2f, Buy: %.2f\n", c.CurrencyCodeA, c.RateSell, c.RateBuy)
 		}
 	}
+
+	fmt.Println("\nMCC Info Example (English by default):")
+	if info, ok := client.MCC.Get("0742"); ok {
+		fmt.Printf("MCC: %s\nGroup: %s\nDescription: %s\n", info.MCC, info.GroupName, info.ShortDescription)
+	}
+
+	fmt.Println("\nMCC Info Example (Ukrainian):")
+	if info, ok := client.MCC.GetUk("0742"); ok {
+		fmt.Printf("MCC: %s\nGroup: %s\nDescription: %s\n", info.MCC, info.GroupName, info.ShortDescription)
+	}
 }

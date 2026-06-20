@@ -13,7 +13,8 @@ Go SDK для взаємодії з Monobank Personal API. Ця бібліоте
 - **Єдиний клієнт**: доступ до всіх функцій через одну точку входу (`client.Public` та `client.Personal`).
 - **Повна підтримка Personal API**: курси валют, інформація про клієнта, виписки.
 - **Типізація**: використання `time.Time` для дат та чітких структур для даних.
-- **Rate Limiting**: вбудований захист від занадто частих запитів (60с ліміт для виписок та інфо).
+- **Rate Limiting & Caching**: вбудований захист від занадто частих запитів та кешування `GetClientInfo` на 60 секунд.
+- **MCC Support**: вбудований довідник Merchant Category Codes (використовуються напрацювання [Oleksios/Merchant-Category-Codes](https://github.com/Oleksios/Merchant-Category-Codes)).
 - **Автоматичні повтори (Retries)**: підтримка повторних спроб при отриманні HTTP 429 (Too Many Requests).
 - **Конфігурація**: можливість налаштування власного HTTP-клієнта та інтервалів ретраїв.
 
@@ -72,7 +73,8 @@ Go SDK for interacting with Monobank Personal API. This library allows you to ea
 - **Unified Client**: access all features via a single entry point (`client.Public` and `client.Personal`).
 - **Full Personal API Support**: currency rates, client info, statements.
 - **Strong Typing**: uses `time.Time` for dates and clear data structures.
-- **Rate Limiting**: built-in protection against frequent requests (60s limit for statements and info).
+- **Rate Limiting & Caching**: built-in protection against frequent requests and 60-second caching for `GetClientInfo`.
+- **MCC Support**: built-in Merchant Category Codes directory (based on [Oleksios/Merchant-Category-Codes](https://github.com/Oleksios/Merchant-Category-Codes)).
 - **Automatic Retries**: supports retrying requests when receiving HTTP 429 (Too Many Requests).
 - **Configuration**: ability to set a custom HTTP client and retry intervals.
 

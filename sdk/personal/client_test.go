@@ -3,6 +3,7 @@ package personal
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -87,51 +88,60 @@ func TestClient_GetStatement_LimitError(t *testing.T) {
 	}
 }
 
-func TestClient_RateLimit(t *testing.T) {
+func TestClient_GetClientInfo_Caching(t *testing.T) {
+	token := "test-token"
+	calls := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		if r.URL.Path == "/personal/client-info" {
-			w.Write([]byte(`{"name":"Test"}`))
-		} else {
-			w.Write([]byte("[]"))
+		calls++
+		res := UserInfo{
+			Name: fmt.Sprintf("Call %d", calls),
 		}
+		json.NewEncoder(w).Encode(res)
 	}))
 	defer server.Close()
 
-	client := NewClient("token")
-	client.base.BaseURL = server.URL
+	c := NewClient(token)
+	c.base.BaseURL = server.URL
 
-	// First call should be successful
-	_, err := client.GetStatement(context.Background(), "0", time.Now().Add(-time.Hour), time.Now())
+	// First call
+	info1, err := c.GetClientInfo(context.Background())
 	if err != nil {
 		t.Fatalf("First call failed: %v", err)
 	}
-
-	// Second call immediately after the first should return an error
-	_, err = client.GetStatement(context.Background(), "0", time.Now().Add(-time.Hour), time.Now())
-	if err == nil {
-		t.Fatal("Expected rate limit error for GetStatement, got nil")
+	if info1.Name != "Call 1" {
+		t.Errorf("Expected 'Call 1', got '%s'", info1.Name)
+	}
+	if calls != 1 {
+		t.Errorf("Expected 1 server call, got %d", calls)
 	}
 
-	expectedErr := "too many requests: GetStatement can be called once per 60 seconds"
-	if err.Error() != expectedErr {
-		t.Errorf("Expected error '%s', got '%s'", expectedErr, err.Error())
-	}
-
-	// Check for GetClientInfo
-	_, err = client.GetClientInfo(context.Background())
+	// Second call immediately after - should be cached
+	info2, err := c.GetClientInfo(context.Background())
 	if err != nil {
-		t.Fatalf("First GetClientInfo call failed: %v", err)
+		t.Fatalf("Second call failed: %v", err)
+	}
+	if info2.Name != "Call 1" {
+		t.Errorf("Expected cached 'Call 1', got '%s'", info2.Name)
+	}
+	if calls != 1 {
+		t.Errorf("Expected still 1 server call, got %d", calls)
 	}
 
-	_, err = client.GetClientInfo(context.Background())
-	if err == nil {
-		t.Fatal("Expected rate limit error for GetClientInfo, got nil")
-	}
+	// Manipulate last call time to simulate expiration
+	c.mu.Lock()
+	c.lastClientInfoCall = time.Now().Add(-61 * time.Second)
+	c.mu.Unlock()
 
-	expectedErrCI := "too many requests: GetClientInfo can be called once per 60 seconds"
-	if err.Error() != expectedErrCI {
-		t.Errorf("Expected error '%s', got '%s'", expectedErrCI, err.Error())
+	// Third call after expiration - should call server again
+	info3, err := c.GetClientInfo(context.Background())
+	if err != nil {
+		t.Fatalf("Third call failed: %v", err)
+	}
+	if info3.Name != "Call 2" {
+		t.Errorf("Expected 'Call 2', got '%s'", info3.Name)
+	}
+	if calls != 2 {
+		t.Errorf("Expected 2 server calls, got %d", calls)
 	}
 }
 
