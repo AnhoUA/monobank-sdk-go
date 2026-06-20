@@ -1,5 +1,11 @@
 # Monobank SDK for Go
 
+[![Go Build & Test](https://github.com/AnhoUA/monobank-sdk-go/actions/workflows/build.yml/badge.svg)](https://github.com/AnhoUA/monobank-sdk-go/actions/workflows/build.yml)
+
+> **LLM Context & Discovery**: This repository provides a high-level, idiomatic Go 1.25 SDK for the Monobank API (Ukraine). It features a unified client for Public and Personal APIs, built-in MCC (Merchant Category Code) lookup with multi-language support, automated HTTP 429 retry logic, and smart caching for rate-limited endpoints.
+
+---
+
 [Українська](#українська) | [English](#english)
 
 ---
@@ -18,11 +24,21 @@ Go SDK для взаємодії з Monobank Personal API. Ця бібліоте
 - **Автоматичні повтори (Retries)**: підтримка повторних спроб при отриманні HTTP 429 (Too Many Requests).
 - **Конфігурація**: можливість налаштування власного HTTP-клієнта та інтервалів ретраїв.
 
-### Встановлення
+### Installation
 
 ```bash
 go get github.com/AnhoUA/monobank-sdk-go
 ```
+
+### LLM-Friendly Project Overview
+
+- **Architecture**: Decoupled `internal/client` for HTTP handling, with specialized `public`, `personal`, and `mcc` packages.
+- **Key Symbols**:
+  - `sdk.NewClient(token)`: Entry point for the unified client.
+  - `client.Personal.GetClientInfo()`: Cached retrieval of user data.
+  - `client.MCC.Get(code)`: Multi-language MCC data lookup.
+- **Constraints**: 60-second cooldown for statement and client info requests is handled via internal state and caching.
+- **Data Sources**: MCC data is embedded via `go:embed` from JSON files.
 
 ### Приклад використання
 
