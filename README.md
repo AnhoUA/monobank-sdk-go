@@ -75,6 +75,43 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Printf("Привіт, %s!\n", info.Name)
+
+	// Отримання виписки за останні 2 дні для першого рахунку
+	if len(info.Accounts) > 0 {
+		accountID := info.Accounts[0].ID
+		to := time.Now()
+		from := to.Add(-48 * time.Hour)
+
+		statement, err := c.Personal.GetStatement(context.Background(), accountID, from, to)
+		if err != nil {
+			log.Printf("Помилка отримання виписки: %v", err)
+		} else {
+			for _, item := range statement {
+				fmt.Printf("Транзакція: %s, Сума: %.2f\n", item.Description, float64(item.Amount)/100.0)
+			}
+		}
+	}
+
+	// Встановлення Webhook
+	// err = c.Personal.SetWebhook(context.Background(), "https://your-server.com/webhook")
+}
+```
+
+### Додаткові приклади (Personal API)
+
+#### Отримання інформації про клієнта та баланс
+```go
+info, err := client.Personal.GetClientInfo(ctx)
+for _, acc := range info.Accounts {
+    fmt.Printf("Рахунок: %s, Баланс: %.2f %d\n", acc.IBAN, float64(acc.Balance)/100.0, acc.CurrencyCode)
+}
+```
+
+#### Робота з MCC (Merchant Category Codes)
+```go
+// Отримання назви категорії за кодом
+if info, ok := client.MCC.GetUk("5411"); ok {
+    fmt.Printf("Категорія: %s (%s)\n", info.ShortDescription, info.GroupName)
 }
 ```
 
@@ -135,5 +172,42 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Printf("Hello, %s!\n", info.Name)
+
+	// Get statement for the last 2 days for the first account
+	if len(info.Accounts) > 0 {
+		accountID := info.Accounts[0].ID
+		to := time.Now()
+		from := to.Add(-48 * time.Hour)
+
+		statement, err := c.Personal.GetStatement(context.Background(), accountID, from, to)
+		if err != nil {
+			log.Printf("Error getting statement: %v", err)
+		} else {
+			for _, item := range statement {
+				fmt.Printf("Transaction: %s, Amount: %.2f\n", item.Description, float64(item.Amount)/100.0)
+			}
+		}
+	}
+
+	// Set Webhook
+	// err = c.Personal.SetWebhook(context.Background(), "https://your-server.com/webhook")
+}
+```
+
+### Additional Examples (Personal API)
+
+#### Get client info and balances
+```go
+info, err := client.Personal.GetClientInfo(ctx)
+for _, acc := range info.Accounts {
+    fmt.Printf("Account: %s, Balance: %.2f %d\n", acc.IBAN, float64(acc.Balance)/100.0, acc.CurrencyCode)
+}
+```
+
+#### Working with MCC (Merchant Category Codes)
+```go
+// Get category name by code
+if info, ok := client.MCC.Get("5411"); ok {
+    fmt.Printf("Category: %s (%s)\n", info.ShortDescription, info.GroupName)
 }
 ```
